@@ -10,9 +10,9 @@ fastapi-celery
 
 ### 2. celery app
 
-`celery -A main.celery worker --pool=solo --loglevel=info`
+`celery -A worker.celery worker --pool=solo -l info --loglevel=info`
 
 ### 3. flower
 
-`celery -A main.celery flower --port=5555`
+`celery --broker=redis://127.0.0.1:6379/0 flower --port=5555`
 
