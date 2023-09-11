@@ -17,7 +17,8 @@ celery.conf.result_backend = os.environ.get("CELERY_RESULT_BACKEND", "redis://12
 def create_task(task_type):
     # time.sleep(int(task_type) * 10)
     print("create_task task_type=======", task_type)
-    OscarEmr()
+    oscar_emr = OscarEmr()
+    oscar_emr.process()
     print("oscar emr success======")
     time.sleep(int(task_type) * 3)
     return True
@@ -29,12 +30,14 @@ class OscarEmr:
                   "(KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36")
 
     def __init__(self):
+        print("inside oscar emr init========")
         self.driver = self.get_deriver()
 
     def get_deriver(self):
         options = ChromeOptions()
         # if self.headless:
         #     options.add_argument("--headless=new")
+        options.add_argument("--headless=new")
         options.set_capability('unhandledPromptBehavior', 'accept')
         options.add_argument("--window-size=1920,1080")
         options.add_argument("start-maximized")
