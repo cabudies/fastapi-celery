@@ -10,7 +10,7 @@ fastapi-celery
 
 ### 2. celery app
 
-`celery -A worker.celery worker --pool=solo -l info --loglevel=info`
+`celery -A worker.celery worker --pool=solo -l info --loglevel=info --logfile=logs/celery.log`
 
 ### 3. flower
 
