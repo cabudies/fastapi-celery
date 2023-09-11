@@ -165,30 +165,33 @@ class OscarEmr:
             print("EMR_LOGIN_FAILED=====")
             return
         print("EMR_LOGIN_SUCCESS========")
-        # try:
-        #     search.click()
-        # except ElementClickInterceptedException as err:
-        #     print(f"ERROR: {type(err)}")
-        #     try:
-        #         # initial_pop_up = self.driver.find_element(
-        #         #     By.XPATH, "//div/div/button[text()[contains(., 'Got it!')]]"
-        #         # )
-        #         initial_pop_up = self.driver.find_element(
-        #             By.XPATH, "//a[@title='Search for patient records']"
-        #         )
-        #         initial_pop_up.click()
-        #         time.sleep(1)
-        #         search.click()
-        #     except Exception as err:
-        #         print(f"error: {type(err)}")
+        try:
+            search.click()
+        except ElementClickInterceptedException as err:
+            print(f"ERROR: {type(err)}")
+            try:
+                # initial_pop_up = self.driver.find_element(
+                #     By.XPATH, "//div/div/button[text()[contains(., 'Got it!')]]"
+                # )
+                initial_pop_up = self.driver.find_element(
+                    By.XPATH, "//a[@title='Search for patient records']"
+                )
+                initial_pop_up.click()
+                time.sleep(1)
+                search.click()
+            except Exception as err:
+                print(f"error: {type(err)}")
         
         initial_pop_up = self.driver.find_element(
             By.XPATH, "//a[@title='Search for patient records']"
         )
         initial_pop_up.click()
         time.sleep(2)
+        processed_patients_count = 0
 
         while True:
+            if processed_patients_count > 5:
+                break
             if self.download_limit and self.file_downloaded and self.file_processed > self.download_limit:
                 print(f"file download limit {self.download_limit} "
                       f"crossed: {self.file_processed} - downloaded: {self.file_downloaded}")
@@ -232,6 +235,7 @@ class OscarEmr:
                 continue
             self.complete_processed_patients.append(self.previous_patient_id)
             time.sleep(0.2)
+            processed_patients_count += 1
             # break
 
         time.sleep(1.5)
@@ -390,16 +394,16 @@ class OscarEmr:
                     download_button = doc_properties[0].find_element(By.TAG_NAME, "a")
                     download_button.click()
                     time.sleep(0.3)
-                    self.process_pop_up4(
-                        self.process_file_name(document_details[0].strip()),
-                        doc_type=doc_type,
-                        idx=idx
-                    )
-                    # self.process_pop_up4_for_local_storage(
+                    # self.process_pop_up4(
                     #     self.process_file_name(document_details[0].strip()),
                     #     doc_type=doc_type,
                     #     idx=idx
                     # )
+                    self.process_pop_up4_for_local_storage(
+                        self.process_file_name(document_details[0].strip()),
+                        doc_type=doc_type,
+                        idx=idx
+                    )
                     self.driver.switch_to.window(self.driver.window_handles[3])
                     self.download_time += (time.time() - t1)
                     print(f"download time: {time.time() - t1}")
@@ -646,70 +650,70 @@ class OscarEmr:
         )
 
 
-if __name__ == "__main__":
-    start_time = time.time()
-    file_downloaded = 0
-    download_time = 0
-    file_processed = 0
-    download_type_records = {}
-    emr = None
-    run_time_processed_patients_stored = None
-    try:
-        with open(f"session_{RPA_EMR_PHELIX_ID}.json", 'r') as fhr:
-            existing_session_records = json.loads(fhr.read() or "{}")
-        download_time = existing_session_records.get("download_time") or 0
-        file_downloaded = existing_session_records.get("file_downloaded") or 0
-        file_processed = existing_session_records.get("file_processed") or 0
-        run_time_processed_patients_stored = existing_session_records.get("complete_processed_patients_to_write")
-        download_type_records = existing_session_records.get("download_type_records")
-    except Exception as err:
-        print(f"warning: {err}")
-        existing_session_records = {}
-    try:
-        emr = OscarEmr(
-            emr_login_url=EMR_LOGIN_URL,
-            emr_id=RPA_EMR_PHELIX_ID,
-            download_directory=DOWNLOAD_PATH,
-            processed_patients_stored=copy.deepcopy(run_time_processed_patients_stored),
-            headless=True,
-            # headless=False,
-            download_limit=DOWNLOAD_LIMIT,
-            file_downloaded=file_downloaded,
-            download_type_records=download_type_records,
-            document_download_limit=DOCUMENT_DOWNLOAD_LIMIT,
-            file_processed=file_processed,
-            expected_document_type_count=EXPECTED_DOCUMENT_TYPES_COUNT
-        )
-        emr.process()
-    except (Exception, KeyboardInterrupt) as err:
-        print(f"error: {err}")
-        print("traceback========", traceback.format_exc())
-    finally:
-        ## emr.complete_processed_patients - patients records for which data
-        ## has been downloaded (appending only patient ids)
-        if emr and emr.complete_processed_patients:
-            file_downloaded = emr.file_downloaded ## count of files downloaded
-            file_processed = emr.file_processed ## count of files processed not checking if downloaded or not
-            download_time = emr.download_time ## final download time
-            download_type_records = emr.download_type_records ## document record type (dictionary with different doc types count)
-            complete_processed_patients_to_write = emr.complete_processed_patients
-            if emr.processed_patients_stored and len(emr.processed_patients_stored) > len(emr.complete_processed_patients):
-                complete_processed_patients_to_write = emr.processed_patients_stored
-            try:
-                session_records = {
-                    "complete_processed_patients_to_write": complete_processed_patients_to_write,
-                    "download_time": download_time,
-                    "file_downloaded": file_downloaded,
-                    "time_required": time.time() - start_time, ## final time processed - initial time
-                    "download_type_records": download_type_records,
-                    "file_processed": file_processed
-                }
-                print(emr.complete_processed_patients)
-                with open(f"session_{emr.emr_id}.json", 'w') as fhw:
-                    fhw.write(json.dumps(session_records, indent=4))
-            except Exception as err:
-                print(f"error: {err}")
-        if emr and emr.driver:
-            emr.driver.quit()
-        print(f"time_required: {time.time() - start_time}:: \n"
-              f"file_downloaded: {file_downloaded}: download_time: {download_time}")
+# if __name__ == "__main__":
+#     start_time = time.time()
+#     file_downloaded = 0
+#     download_time = 0
+#     file_processed = 0
+#     download_type_records = {}
+#     emr = None
+#     run_time_processed_patients_stored = None
+#     try:
+#         with open(f"session_{RPA_EMR_PHELIX_ID}.json", 'r') as fhr:
+#             existing_session_records = json.loads(fhr.read() or "{}")
+#         download_time = existing_session_records.get("download_time") or 0
+#         file_downloaded = existing_session_records.get("file_downloaded") or 0
+#         file_processed = existing_session_records.get("file_processed") or 0
+#         run_time_processed_patients_stored = existing_session_records.get("complete_processed_patients_to_write")
+#         download_type_records = existing_session_records.get("download_type_records")
+#     except Exception as err:
+#         print(f"warning: {err}")
+#         existing_session_records = {}
+#     try:
+#         emr = OscarEmr(
+#             emr_login_url=EMR_LOGIN_URL,
+#             emr_id=RPA_EMR_PHELIX_ID,
+#             download_directory=DOWNLOAD_PATH,
+#             processed_patients_stored=copy.deepcopy(run_time_processed_patients_stored),
+#             headless=True,
+#             # headless=False,
+#             download_limit=DOWNLOAD_LIMIT,
+#             file_downloaded=file_downloaded,
+#             download_type_records=download_type_records,
+#             document_download_limit=DOCUMENT_DOWNLOAD_LIMIT,
+#             file_processed=file_processed,
+#             expected_document_type_count=EXPECTED_DOCUMENT_TYPES_COUNT
+#         )
+#         emr.process()
+#     except (Exception, KeyboardInterrupt) as err:
+#         print(f"error: {err}")
+#         print("traceback========", traceback.format_exc())
+#     finally:
+#         ## emr.complete_processed_patients - patients records for which data
+#         ## has been downloaded (appending only patient ids)
+#         if emr and emr.complete_processed_patients:
+#             file_downloaded = emr.file_downloaded ## count of files downloaded
+#             file_processed = emr.file_processed ## count of files processed not checking if downloaded or not
+#             download_time = emr.download_time ## final download time
+#             download_type_records = emr.download_type_records ## document record type (dictionary with different doc types count)
+#             complete_processed_patients_to_write = emr.complete_processed_patients
+#             if emr.processed_patients_stored and len(emr.processed_patients_stored) > len(emr.complete_processed_patients):
+#                 complete_processed_patients_to_write = emr.processed_patients_stored
+#             try:
+#                 session_records = {
+#                     "complete_processed_patients_to_write": complete_processed_patients_to_write,
+#                     "download_time": download_time,
+#                     "file_downloaded": file_downloaded,
+#                     "time_required": time.time() - start_time, ## final time processed - initial time
+#                     "download_type_records": download_type_records,
+#                     "file_processed": file_processed
+#                 }
+#                 print(emr.complete_processed_patients)
+#                 with open(f"session_{emr.emr_id}.json", 'w') as fhw:
+#                     fhw.write(json.dumps(session_records, indent=4))
+#             except Exception as err:
+#                 print(f"error: {err}")
+#         if emr and emr.driver:
+#             emr.driver.quit()
+#         print(f"time_required: {time.time() - start_time}:: \n"
+#               f"file_downloaded: {file_downloaded}: download_time: {download_time}")

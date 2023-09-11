@@ -1,0 +1,18 @@
+{
+    "complete_processed_patients_to_write": [
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6"
+    ],
+    "download_time": 21.50155782699585,
+    "file_downloaded": 6,
+    "time_required": 66.41668033599854,
+    "download_type_records": {
+        "lab": 4,
+        "Referral_Letter": 2
+    },
+    "file_processed": 6
+}
