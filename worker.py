@@ -2,7 +2,8 @@ import os
 import time
 
 from celery import Celery
-from phelix_download import OscarEmr
+# from phelix_download import OscarEmr
+import oscar_emr_docs_with_pin_login
 # from selenium import webdriver
 # from selenium.webdriver import ChromeOptions
 # from js_scripts import JS_SCRIPT
@@ -18,11 +19,15 @@ celery.conf.result_backend = os.environ.get("CELERY_RESULT_BACKEND", "redis://12
 def create_task(task_type):
     # time.sleep(int(task_type) * 10)
     print("create_task task_type=======", task_type)
-    oscar_emr = OscarEmr()
-    oscar_emr.process()
+    # oscar_emr = OscarEmr()
+    # oscar_emr.process()
+    
+    process_emr_documents()
+
     print("oscar emr success======")
     time.sleep(int(task_type) * 3)
     return True
 
 
-
+def process_emr_documents():
+    oscar_emr_docs_with_pin_login.start_emr_process()
