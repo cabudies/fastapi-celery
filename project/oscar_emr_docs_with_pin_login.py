@@ -18,6 +18,8 @@ from selenium.webdriver.common.by import By
 from selenium.common.exceptions import ElementClickInterceptedException
 from dotenv import load_dotenv
 from js_scripts import JS_SCRIPT
+from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
+
 
 load_dotenv()
 
@@ -30,11 +32,12 @@ EMR_LOGIN_URL = os.getenv(
 )
 print(f"EMR_LOGIN_URL: {EMR_LOGIN_URL}")
 RPA_EMR_PHELIX_ID = os.getenv('RPA_EMR_PHELIX_ID', '192')
-CHROME_DRIVER_PATH = os.getenv(
-    "RPA_CHROME_DRIVER_PATH",
-    os.path.join(CURRENT_PATH, "chromedriver")
-)
-print(CHROME_DRIVER_PATH)
+# CHROME_DRIVER_PATH = os.getenv(
+#     "RPA_CHROME_DRIVER_PATH",
+#     os.path.join(CURRENT_PATH, "chromedriver")
+# )
+CHROME_DRIVER_PATH = os.environ.get("RPA_CHROME_DRIVER_PATH", os.path.join(CURRENT_PATH, "chromedriver"))
+print("CHROME_DRIVER_PATH==========", CHROME_DRIVER_PATH)
 try:
     DOWNLOAD_LIMIT = int(os.getenv("DOWNLOAD_LIMIT", 25000))
 except Exception:
@@ -135,7 +138,10 @@ class OscarEmr:
             "plugins.always_open_pdf_externally": True
         })
 
-        driver = webdriver.Chrome(CHROME_DRIVER_PATH, options=options)
+        # driver = webdriver.Chrome(CHROME_DRIVER_PATH, options=options)
+        
+        driver = webdriver.Remote("http://localhost:4444/wd/hub", DesiredCapabilities.CHROME)
+
         driver.execute_script("Object.defineProperty(navigator, 'maxTouchPoints', {get: () => 1});")
         driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined});")
         driver.execute_script("Object.defineProperty(navigator.connection, 'rtt', {get: () => 100});")
