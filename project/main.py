@@ -6,6 +6,7 @@ import os
 import time
 from selenium import webdriver
 from selenium.webdriver import ChromeOptions
+# from project.js_scripts import JS_SCRIPT
 from js_scripts import JS_SCRIPT
 
 # from worker import create_task
@@ -84,7 +85,7 @@ class OscarEmr:
 @celery.task(name="create_task")
 def create_task(task_type):
     print("create_task task_type======", task_type)
-    OscarEmr()
+    # OscarEmr()
     time.sleep(int(task_type) * 10)
     # time.sleep(int(task_type) * 4) ## sleeping the task for 4 seconds and then return true
     return True

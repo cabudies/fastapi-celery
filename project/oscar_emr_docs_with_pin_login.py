@@ -19,6 +19,7 @@ from selenium.common.exceptions import ElementClickInterceptedException
 from dotenv import load_dotenv
 from js_scripts import JS_SCRIPT
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
+# import chromedriver_binary  # Adds chromedriver binary to path
 
 
 load_dotenv()
@@ -32,6 +33,7 @@ EMR_LOGIN_URL = os.getenv(
 )
 print(f"EMR_LOGIN_URL: {EMR_LOGIN_URL}")
 RPA_EMR_PHELIX_ID = os.getenv('RPA_EMR_PHELIX_ID', '192')
+print("RPA_EMR_PHELIX_ID=======", RPA_EMR_PHELIX_ID)
 # CHROME_DRIVER_PATH = os.getenv(
 #     "RPA_CHROME_DRIVER_PATH",
 #     os.path.join(CURRENT_PATH, "chromedriver")
@@ -118,8 +120,13 @@ class OscarEmr:
 
     def get_deriver(self):
         options = ChromeOptions()
-        if self.headless:
-            options.add_argument("--headless=new")
+        # if self.headless:
+        #     options.add_argument("--headless=new")
+        # options.add_argument("--headless=new")
+        options.add_argument("--headless")
+        options.add_argument('--no-sandbox')
+        options.add_argument("log-path=/app/chromedriver.log")
+        options.add_argument('--disable-dev-shm-usage')
         options.set_capability('unhandledPromptBehavior', 'accept')
         options.add_argument("--window-size=1920,1080")
         options.add_argument("start-maximized")
@@ -138,9 +145,54 @@ class OscarEmr:
             "plugins.always_open_pdf_externally": True
         })
 
-        # driver = webdriver.Chrome(CHROME_DRIVER_PATH, options=options)
+        # options.binary_location = '/usr/bin/chromium-browser' 
+
+        # driver = webdriver.Chrome(executable_path='/usr/bin/chromedriver', options=options)
+        # driver = webdriver.Chrome(executable_path='/app/chromedriver', options=options)
+        driver = webdriver.Chrome(options=options)
+        # driver = webdriver.Chrome(DesiredCapabilities.CHROME, options=options)
+
+        # chrome_executable_path = os.getenv("PATH", "not found")
+        # print("chrome_executable_path==========", chrome_executable_path)
+
+        # # driver = webdriver.Chrome(CHROME_DRIVER_PATH, options=options)
+        # from selenium.webdriver.chrome.service import Service
+        # service = Service()
+        # driver = webdriver.Chrome(service=service, options=options)
+        # driver = webdriver.Chrome(executable_path='/app/chromedriver', options=options)
         
-        driver = webdriver.Remote("http://localhost:4444/wd/hub", DesiredCapabilities.CHROME)
+        # driver = webdriver.Remote(
+        #     "http://localhost:4444/wd/hub", 
+        #     DesiredCapabilities.CHROME, 
+        #     options=options
+        # )
+
+        # from selenium.webdriver.remote.remote_connection import RemoteConnection
+
+        # remote_driver = webdriver.Remote(
+        #     RemoteConnection(remote_server_addr="http://localhost:4444/wd/hub"), 
+        #     DesiredCapabilities.CHROME.copy(), 
+        #     # options=options
+        # )
+
+        # # Cast the RemoteWebDriver to a ChromeDriver
+        # driver = webdriver.Chrome(options=options)  # You can pass additional options if needed
+        # # driver.command_executor = remote_driver.command_executor
+        # # driver.session_id = remote_driver.session_id
+
+        # # from selenium.webdriver.chrome.service import Service
+
+        # # ser = Service()
+
+        # from selenium.webdriver.chrome.service import Service
+        # from webdriver_manager.chrome import ChromeDriverManager
+
+        # driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+        # # driver.get("https://www.google.com")
+
+        # # driver = webdriver.Chrome(options=options)
+        # # import selenium.webdriver
+        # # driver = selenium.webdriver.Chrome(options=options)
 
         driver.execute_script("Object.defineProperty(navigator, 'maxTouchPoints', {get: () => 1});")
         driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined});")
@@ -157,6 +209,7 @@ class OscarEmr:
             "Page.addScriptToEvaluateOnNewDocument",
             JS_SCRIPT,
         )
+
         return driver
 
     '''
@@ -171,6 +224,7 @@ class OscarEmr:
             print("EMR_LOGIN_FAILED=====")
             return
         print("EMR_LOGIN_SUCCESS========")
+        return
         try:
             search.click()
         except ElementClickInterceptedException as err:
@@ -551,9 +605,11 @@ class OscarEmr:
         self.driver.close()
 
     def emr_login(self):
+        print("inside emr_login function=========")
         self.driver.get(self.emr_login_url)
         time.sleep(2)
         try:
+            print("inside login page=========")
             form = WebDriverWait(self.driver, 6).until(
                 # EC.presence_of_element_located((By.ID, "form19"))
                 EC.presence_of_element_located((By.NAME, "loginForm"))
@@ -658,6 +714,7 @@ class OscarEmr:
 
 
 def start_emr_process():
+    print("inside start_emr_process=======")
     start_time = time.time()
     file_downloaded = 0
     download_time = 0
@@ -696,31 +753,49 @@ def start_emr_process():
         print(f"error: {err}")
         print("traceback========", traceback.format_exc())
     finally:
-        ## emr.complete_processed_patients - patients records for which data
-        ## has been downloaded (appending only patient ids)
-        if emr and emr.complete_processed_patients:
-            file_downloaded = emr.file_downloaded ## count of files downloaded
-            file_processed = emr.file_processed ## count of files processed not checking if downloaded or not
-            download_time = emr.download_time ## final download time
-            download_type_records = emr.download_type_records ## document record type (dictionary with different doc types count)
-            complete_processed_patients_to_write = emr.complete_processed_patients
-            if emr.processed_patients_stored and len(emr.processed_patients_stored) > len(emr.complete_processed_patients):
-                complete_processed_patients_to_write = emr.processed_patients_stored
-            try:
-                session_records = {
-                    "complete_processed_patients_to_write": complete_processed_patients_to_write,
-                    "download_time": download_time,
-                    "file_downloaded": file_downloaded,
-                    "time_required": time.time() - start_time, ## final time processed - initial time
-                    "download_type_records": download_type_records,
-                    "file_processed": file_processed
-                }
-                print(emr.complete_processed_patients)
-                with open(f"session_{emr.emr_id}.json", 'w') as fhw:
-                    fhw.write(json.dumps(session_records, indent=4))
-            except Exception as err:
-                print(f"error: {err}")
-        if emr and emr.driver:
-            emr.driver.quit()
-        print(f"time_required: {time.time() - start_time}:: \n"
-              f"file_downloaded: {file_downloaded}: download_time: {download_time}")
+        # if emr and emr.complete_processed_patients:
+        #     file_downloaded = emr.file_downloaded ## count of files downloaded
+        #     file_processed = emr.file_processed ## count of files processed not checking if downloaded or not
+        #     download_time = emr.download_time ## final download time
+        #     download_type_records = emr.download_type_records ## document record type (dictionary with different doc types count)
+        #     complete_processed_patients_to_write = emr.complete_processed_patients
+        #     if emr.processed_patients_stored and len(emr.processed_patients_stored) > len(emr.complete_processed_patients):
+        #         complete_processed_patients_to_write = emr.processed_patients_stored
+        #     try:
+        #         session_records = {
+        #             "complete_processed_patients_to_write": complete_processed_patients_to_write,
+        #             "download_time": download_time,
+        #             "file_downloaded": file_downloaded,
+        #             "time_required": time.time() - start_time, ## final time processed - initial time
+        #             "download_type_records": download_type_records,
+        #             "file_processed": file_processed
+        #         }
+        #         print(emr.complete_processed_patients)
+        #         with open(f"session_{emr.emr_id}.json", 'w') as fhw:
+        #             fhw.write(json.dumps(session_records, indent=4))
+        #     except Exception as err:
+        #         print(f"error: {err}")
+        # if emr and emr.driver:
+        #     emr.driver.quit()
+        # print(f"time_required: {time.time() - start_time}:: \n"
+        #       f"file_downloaded: {file_downloaded}: download_time: {download_time}")
+        session_records = {
+            "complete_processed_patients_to_write": [],
+            "download_time": 123,
+            "file_downloaded": 123,
+            "time_required": time.time(), ## final time processed - initial time
+            "download_type_records": [1],
+            "file_processed": 1234
+        }
+        # print(emr.complete_processed_patients)
+    
+        with open(f"session_192.json", 'w') as fhw:
+            fhw.write(json.dumps(session_records, indent=4))
+            
+    print("start the sleep for 2 minutes=====")
+    time.sleep(60*2)
+    print("sleep ended for 2 minutes=====")
+    return
+
+# start_emr_process()
+
