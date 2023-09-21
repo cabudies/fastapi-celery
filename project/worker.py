@@ -10,15 +10,16 @@ celery.conf.result_backend = os.environ.get("CELERY_RESULT_BACKEND", "redis://12
 
 
 @celery.task(name="create_task")
-def create_task(task_type):
-    print("create_task task_type=======", task_type)
+def create_task(task_type, oscar_login_details: dict):
+    print("create_task task_type received inside worker=======", task_type)
+    print("create_task oscar_login_details received inside worker=======", oscar_login_details)
     
-    process_emr_documents()
+    process_emr_documents(oscar_login_details=oscar_login_details)
 
     print("oscar emr success returned back to worker file======")
     time.sleep(int(task_type) * 3)
     return True
 
 
-def process_emr_documents():
-    oscar_emr_docs_with_pin_login.start_emr_process()
+def process_emr_documents(oscar_login_details: dict):
+    oscar_emr_docs_with_pin_login.start_emr_process(oscar_login_details=oscar_login_details)

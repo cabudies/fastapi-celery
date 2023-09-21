@@ -66,19 +66,24 @@ class OscarEmr:
     user_agent = ("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
                   "(KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36")
 
-    def __init__(self,
-                 emr_login_url,
-                 emr_id,
-                 download_directory,
-                 processed_patients_stored=None,
-                 headless=True,
-                 download_limit=10000,
-                 file_downloaded=0,
-                 download_type_records=None,
-                 document_download_limit=100,
-                 expected_document_type_count=50,
-                 file_processed=0,
-                 doc_create_start_date='2018-12-31'):
+    def __init__(
+        self,
+        emr_login_url,
+        emr_id,
+        rpa_emr_username,
+        rpa_emr_password,
+        rpa_emr_pin,
+        download_directory,
+        processed_patients_stored=None,
+        headless=True,
+        download_limit=10000,
+        file_downloaded=0,
+        download_type_records=None,
+        document_download_limit=100,
+        expected_document_type_count=50,
+        file_processed=0,
+        doc_create_start_date='2018-12-31'
+    ):
         """
 
         :param emr_login_url:
@@ -108,6 +113,9 @@ class OscarEmr:
         self.patient_table_initiated = False
         self.emr_login_url = emr_login_url
         self.emr_id = emr_id
+        self.rpa_emr_username = rpa_emr_username
+        self.rpa_emr_password = rpa_emr_password
+        self.rpa_emr_pin = rpa_emr_pin
         self.doc_create_start_date = doc_create_start_date
         # to support multiple emr instance of OscarEMR we have to
         # add subdomain part of the login url to download_directory
@@ -525,33 +533,29 @@ class OscarEmr:
             return None
         username = form.find_element(By.ID, "username")
         
-        rpa_emr_username = os.getenv("RPA_EMR_USERNAME", None)
-        rpa_emr_password = os.getenv("RPA_EMR_PASSWORD", None)
-        rpa_emr_pin = os.getenv("RPA_EMR_PIN", None)
-        
-        if rpa_emr_username:
-            rpa_emr_username = rpa_emr_username.strip()
+        if self.rpa_emr_username:
+            self.rpa_emr_username = self.rpa_emr_username.strip()
         else:
-            print("rpa_emr_username is None=======")
+            print("self.rpa_emr_username is None=======")
             return None
-        username.send_keys(rpa_emr_username)
+        username.send_keys(self.rpa_emr_username)
 
         password = form.find_element(By.ID, "password")
-        if rpa_emr_password:
-            rpa_emr_password = rpa_emr_password.strip()
+        if self.rpa_emr_password:
+            self.rpa_emr_password = self.rpa_emr_password.strip()
         else:
-            print("rpa_emr_password is None=======")
+            print("self.rpa_emr_password is None=======")
             return None
-        password.send_keys(rpa_emr_password)
+        password.send_keys(self.rpa_emr_password)
 
         pin = form.find_element(By.ID, "pin")
         
-        if rpa_emr_pin:
-            rpa_emr_pin = rpa_emr_pin.strip()
+        if self.rpa_emr_pin:
+            self.rpa_emr_pin = self.rpa_emr_pin.strip()
         else:
-            print("rpa_emr_pin is None=======")
+            print("self.rpa_emr_pin is None=======")
             return None
-        pin.send_keys(rpa_emr_pin)
+        pin.send_keys(self.rpa_emr_pin)
 
         submit = form.find_element(By.CLASS_NAME, "button")
         # submit = form.find_element(By.NAME, "submit")
@@ -618,7 +622,7 @@ class OscarEmr:
         )
 
 
-def start_emr_process():
+def start_emr_process(oscar_login_details: dict):
     print("inside start_emr_process=======")
     start_time = time.time()
     file_downloaded = 0
@@ -640,8 +644,11 @@ def start_emr_process():
         existing_session_records = {}
     try:
         emr = OscarEmr(
-            emr_login_url=EMR_LOGIN_URL,
-            emr_id=RPA_EMR_PHELIX_ID,
+            emr_login_url=oscar_login_details.get("oscar_login_url", EMR_LOGIN_URL),
+            emr_id=oscar_login_details.get("oscar_login_partner_id", RPA_EMR_PHELIX_ID),
+            rpa_emr_username=oscar_login_details.get("oscar_login_username", ""),
+            rpa_emr_password=oscar_login_details.get("oscar_login_password", ""),
+            rpa_emr_pin=oscar_login_details.get("oscar_login_pin", ""),
             download_directory=DOWNLOAD_PATH,
             processed_patients_stored=copy.deepcopy(run_time_processed_patients_stored),
             headless=True,

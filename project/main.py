@@ -3,6 +3,7 @@ from fastapi.responses import JSONResponse
 import os
 import time
 from celery import Celery
+from worker import create_task
 
 
 celery = Celery(__name__)
@@ -10,11 +11,11 @@ celery.conf.broker_url = os.environ.get("CELERY_BROKER_URL", "redis://127.0.0.1:
 celery.conf.result_backend = os.environ.get("CELERY_RESULT_BACKEND", "redis://127.0.0.1:6379/0")
 
 
-@celery.task(name="create_task")
-def create_task(task_type):
-    print("create_task task_type======", task_type)
-    time.sleep(int(task_type) * 10)
-    return True
+# @celery.task(name="create_task")
+# def create_task(task_type):
+#     print("create_task task_type======", task_type)
+#     time.sleep(int(task_type) * 10)
+#     return True
 
 
 app = FastAPI()
@@ -30,8 +31,27 @@ def run_task(payload = Body(...)):
     print("CELERY_BROKER_URL=========", os.environ.get("CELERY_BROKER_URL", "redis://127.0.0.1:6379/0"))
     print("payload=========", payload)
     task_type = payload["type"]
+    oscar_login_partner_id = payload["oscar_login_partner_id"]
+    oscar_login_url = payload["oscar_login_url"]
+    oscar_login_username = payload["oscar_login_username"]
+    oscar_login_password = payload["oscar_login_password"]
+    oscar_login_pin = payload["oscar_login_pin"]
+
     # task = create_task.delay(int(task_type))
-    task = create_task.delay(int(task_type))
+
+    task = create_task.apply_async(
+        kwargs={
+            "task_type": 3,
+            "oscar_login_details": {
+                "partner_id": oscar_login_partner_id,
+                "oscar_login_url": oscar_login_url,
+                "oscar_login_username": oscar_login_username,
+                "oscar_login_password": oscar_login_password,
+                "oscar_login_pin": oscar_login_pin
+            }
+        }
+    )
+
     return JSONResponse({"task_id": task.id})
 
 
