@@ -27,8 +27,10 @@ def index():
 
 @app.post("/tasks", status_code=201)
 def run_task(payload = Body(...)):
+    print("CELERY_BROKER_URL=========", os.environ.get("CELERY_BROKER_URL", "redis://127.0.0.1:6379/0"))
     print("payload=========", payload)
     task_type = payload["type"]
+    # task = create_task.delay(int(task_type))
     task = create_task.delay(int(task_type))
     return JSONResponse({"task_id": task.id})
 
