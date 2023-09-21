@@ -122,10 +122,10 @@ class OscarEmr:
         options = ChromeOptions()
         # if self.headless:
         #     options.add_argument("--headless=new")
-        # options.add_argument("--headless=new")
-        options.add_argument("--headless")
+        options.add_argument("--headless=new")
+        # options.add_argument("--headless")
         options.add_argument('--no-sandbox')
-        options.add_argument("log-path=/app/chromedriver.log")
+        options.add_argument("log-path=/usr/src/app/chromedriver.log")
         options.add_argument('--disable-dev-shm-usage')
         options.set_capability('unhandledPromptBehavior', 'accept')
         options.add_argument("--window-size=1920,1080")
@@ -145,55 +145,8 @@ class OscarEmr:
             "plugins.always_open_pdf_externally": True
         })
 
-        # options.binary_location = '/usr/bin/chromium-browser' 
-
-        # driver = webdriver.Chrome(executable_path='/usr/bin/chromedriver', options=options)
-        # driver = webdriver.Chrome(executable_path='/app/chromedriver', options=options)
         driver = webdriver.Chrome(options=options)
-        # driver = webdriver.Chrome(DesiredCapabilities.CHROME, options=options)
-
-        # chrome_executable_path = os.getenv("PATH", "not found")
-        # print("chrome_executable_path==========", chrome_executable_path)
-
-        # # driver = webdriver.Chrome(CHROME_DRIVER_PATH, options=options)
-        # from selenium.webdriver.chrome.service import Service
-        # service = Service()
-        # driver = webdriver.Chrome(service=service, options=options)
-        # driver = webdriver.Chrome(executable_path='/app/chromedriver', options=options)
         
-        # driver = webdriver.Remote(
-        #     "http://localhost:4444/wd/hub", 
-        #     DesiredCapabilities.CHROME, 
-        #     options=options
-        # )
-
-        # from selenium.webdriver.remote.remote_connection import RemoteConnection
-
-        # remote_driver = webdriver.Remote(
-        #     RemoteConnection(remote_server_addr="http://localhost:4444/wd/hub"), 
-        #     DesiredCapabilities.CHROME.copy(), 
-        #     # options=options
-        # )
-
-        # # Cast the RemoteWebDriver to a ChromeDriver
-        # driver = webdriver.Chrome(options=options)  # You can pass additional options if needed
-        # # driver.command_executor = remote_driver.command_executor
-        # # driver.session_id = remote_driver.session_id
-
-        # # from selenium.webdriver.chrome.service import Service
-
-        # # ser = Service()
-
-        # from selenium.webdriver.chrome.service import Service
-        # from webdriver_manager.chrome import ChromeDriverManager
-
-        # driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
-        # # driver.get("https://www.google.com")
-
-        # # driver = webdriver.Chrome(options=options)
-        # # import selenium.webdriver
-        # # driver = selenium.webdriver.Chrome(options=options)
-
         driver.execute_script("Object.defineProperty(navigator, 'maxTouchPoints', {get: () => 1});")
         driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined});")
         driver.execute_script("Object.defineProperty(navigator.connection, 'rtt', {get: () => 100});")
@@ -454,16 +407,12 @@ class OscarEmr:
                     download_button = doc_properties[0].find_element(By.TAG_NAME, "a")
                     download_button.click()
                     time.sleep(0.3)
-                    # self.process_pop_up4(
-                    #     self.process_file_name(document_details[0].strip()),
-                    #     doc_type=doc_type,
-                    #     idx=idx
-                    # )
-                    self.process_pop_up4_for_local_storage(
+                    self.process_pop_up4(
                         self.process_file_name(document_details[0].strip()),
                         doc_type=doc_type,
                         idx=idx
                     )
+                    
                     self.driver.switch_to.window(self.driver.window_handles[3])
                     self.download_time += (time.time() - t1)
                     print(f"download time: {time.time() - t1}")
@@ -555,48 +504,6 @@ class OscarEmr:
             self.file_downloaded += 1
             self.update_download_type_records(doc_type)
             # self.driver.close()
-
-
-    def process_pop_up4_for_local_storage(
-        self,
-        file_name,
-        doc_type,
-        idx=0
-    ):
-        file_name = file_name or f"{int(time.time())}{idx}"
-        self.driver.switch_to.window(self.driver.window_handles[4])
-        print(f"waiting for download {time.time()}")
-        file_download_completed = self.is_file_download_completed()
-        time.sleep(0.4)
-        self.close_pop_up(4)
-        time.sleep(1.3)
-        if not file_download_completed:
-            print("download timeout")
-            return False
-        self.file_downloaded += 1
-        self.update_download_type_records(doc_type)
-        # for filename in os.listdir(self.download_directory):
-        #     file_path = os.path.join(self.download_directory, filename)
-        #     print(f"file_path: {file_path}")
-        #     with open(file_path, 'rb') as fh:
-        #         data = fh.read()
-        #     filename = self.file_name_parser(self.process_file_name(filename), idx)
-        #     print(filename, doc_type, file_name)
-        #     bucket_name = STORAGE_BUCKET_NAME
-        #     bucket = gcs.get_bucket(bucket_name)
-        #     blob = bucket.blob(
-        #         os.path.join(
-        #             os.path.join(STORAGE_BUCKET_ROOT_PATH,
-        #                          f"partner_{self.emr_id}",
-        #                          STORAGE_BUCKET_PATH, doc_type),
-        #             f"{file_name}_{filename}{self.previous_patient_id.strip()}.pdf"
-        #         )
-        #     )
-        #     blob.upload_from_string(data, 'application/pdf')
-        #     print(f"blob.public_url: {blob.public_url}")
-        #     self.file_downloaded += 1
-        #     self.update_download_type_records(doc_type)
-
 
     def close_pop_up(self, pos=2):
         # selecting pop-up
@@ -706,10 +613,10 @@ class OscarEmr:
 
     def is_doc_type_limit_processed(self):
         return (
-                len(
-                    [k for k, v in self.download_type_records.items()
-                     if v >= self.document_download_limit]
-                ) >= self.expected_document_type_count
+            len(
+                [k for k, v in self.download_type_records.items()
+                    if v >= self.document_download_limit]
+            ) >= self.expected_document_type_count
         )
 
 
@@ -796,6 +703,3 @@ def start_emr_process():
     time.sleep(60*2)
     print("sleep ended for 2 minutes=====")
     return
-
-# start_emr_process()
-

@@ -42,7 +42,6 @@ RUN apt-get clean && \
 ENV DISPLAY=:99
 
 # Define a working directory
-# WORKDIR /app
 WORKDIR /usr/src/app
 
 # Copy the requirements file into the container
@@ -54,6 +53,3 @@ RUN pip3 install -r requirements.txt
 
 # Copy the rest of your application's code into the container
 COPY . .
-
-# # Example: Run your Selenium script
-# CMD ["python3", "worker.py"]

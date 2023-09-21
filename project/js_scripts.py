@@ -1,5 +1,3 @@
-
-
 JS_SCRIPT = {
     "source": """
         Object.defineProperty(navigator, 'maxTouchPoints', {get: () => 1});
