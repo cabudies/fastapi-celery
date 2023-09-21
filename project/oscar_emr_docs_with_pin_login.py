@@ -19,8 +19,6 @@ from selenium.common.exceptions import ElementClickInterceptedException
 from dotenv import load_dotenv
 from js_scripts import JS_SCRIPT
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
-# import chromedriver_binary  # Adds chromedriver binary to path
-
 
 load_dotenv()
 

@@ -2,10 +2,8 @@ from fastapi import Body, FastAPI
 from fastapi.responses import JSONResponse
 import os
 import time
-from js_scripts import JS_SCRIPT
-
-
 from celery import Celery
+
 
 celery = Celery(__name__)
 celery.conf.broker_url = os.environ.get("CELERY_BROKER_URL", "redis://127.0.0.1:6379/0")
