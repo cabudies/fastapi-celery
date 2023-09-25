@@ -75,7 +75,6 @@ class OscarEmr:
         rpa_emr_pin,
         download_directory,
         processed_patients_stored=None,
-        headless=True,
         download_limit=10000,
         file_downloaded=0,
         download_type_records=None,
@@ -120,7 +119,6 @@ class OscarEmr:
         # to support multiple emr instance of OscarEMR we have to
         # add subdomain part of the login url to download_directory
         self.download_directory = os.path.join(download_directory, self.emr_id)
-        self.headless = headless
         self.prepare_download_directory()
         self.driver = self.get_deriver()
 
@@ -496,9 +494,18 @@ class OscarEmr:
             # )
 
             ## use this structure for prod
+            # blob = bucket.blob(
+            #     STORAGE_BUCKET_ROOT_PATH + "/" +
+            #     f"partner_{self.emr_id}" + "/" +
+            #     STORAGE_BUCKET_PATH + "/" +
+            #     doc_type + "/" +
+            #     f"{file_name}_{filename}{self.previous_patient_id.strip()}.pdf"
+            # )
+
             blob = bucket.blob(
-                STORAGE_BUCKET_ROOT_PATH + "/" +
-                f"{self.emr_id}" + "/" +
+                "prod_document_ai" + "/" +
+                f"partner_{self.emr_id}" + "/" +
+                "files" + "/" +
                 doc_type + "/" +
                 f"{file_name}_{filename}{self.previous_patient_id.strip()}.pdf"
             )

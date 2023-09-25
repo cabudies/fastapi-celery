@@ -28,8 +28,6 @@ def index():
 
 @app.post("/tasks", status_code=201)
 def run_task(payload = Body(...)):
-    print("CELERY_BROKER_URL=========", os.environ.get("CELERY_BROKER_URL", "redis://127.0.0.1:6379/0"))
-    print("payload=========", payload)
     task_type = payload["type"]
     oscar_login_partner_id = payload["oscar_login_partner_id"]
     oscar_login_url = payload["oscar_login_url"]
@@ -42,7 +40,7 @@ def run_task(payload = Body(...)):
 
     task = create_task.apply_async(
         kwargs={
-            "task_type": 3,
+            "task_type": task_type,
             "oscar_login_details": {
                 "partner_id": oscar_login_partner_id,
                 "oscar_login_url": oscar_login_url,

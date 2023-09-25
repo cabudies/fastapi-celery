@@ -67,9 +67,11 @@ class OscarEmr:
         self,
         emr_login_url,
         emr_id,
+        rpa_emr_username,
+        rpa_emr_password,
+        rpa_emr_pin,
         download_directory,
         processed_patients_stored=None,
-        headless=True,
         download_limit=10000,
         file_downloaded=0,
         download_type_records=None,
@@ -107,18 +109,19 @@ class OscarEmr:
         self.patient_table_initiated = False
         self.emr_login_url = emr_login_url
         self.emr_id = emr_id
+        self.rpa_emr_username = rpa_emr_username
+        self.rpa_emr_password = rpa_emr_password
+        self.rpa_emr_pin = rpa_emr_pin
         self.doc_create_start_date = doc_create_start_date
         # to support multiple emr instance of OscarEMR we have to
         # add subdomain part of the login url to download_directory
         self.download_directory = os.path.join(download_directory, self.emr_id)
-        self.headless = headless
         self.prepare_download_directory()
         self.driver = self.get_deriver()
 
     def get_deriver(self):
         options = ChromeOptions()
-        if self.headless:
-            options.add_argument("--headless=new")
+        options.add_argument("--headless=new")
         options.set_capability('unhandledPromptBehavior', 'accept')
         options.add_argument("--window-size=1920,1080")
         options.add_argument("start-maximized")
@@ -457,10 +460,18 @@ class OscarEmr:
             #     )
             # )
 
+            # blob = bucket.blob(
+            #     STORAGE_BUCKET_ROOT_PATH + "/" +
+            #     f"partner_{self.emr_id}" + "/" +
+            #     STORAGE_BUCKET_PATH + "/" +
+            #     doc_type + "/" +
+            #     f"{file_name}_{filename}{self.previous_patient_id.strip()}.pdf"
+            # )
+
             blob = bucket.blob(
-                STORAGE_BUCKET_ROOT_PATH + "/" +
-                f"{self.emr_id}" + "/" +
-                STORAGE_BUCKET_PATH + "/" +
+                "prod_document_ai" + "/" +
+                f"partner_{self.emr_id}" + "/" +
+                "files" + "/" +
                 doc_type + "/" +
                 f"{file_name}_{filename}{self.previous_patient_id.strip()}.pdf"
             )
@@ -487,8 +498,8 @@ class OscarEmr:
             return None
         username = form.find_element(By.ID, "okta-signin-username")
         
-        rpa_emr_username = os.getenv("RPA_EMR_USERNAME", None)
-        rpa_emr_password = os.getenv("RPA_EMR_PASSWORD", None)
+        rpa_emr_username = self.rpa_emr_username
+        rpa_emr_password = self.rpa_emr_password
         
         if rpa_emr_username:
             rpa_emr_username = rpa_emr_username.strip()
@@ -589,12 +600,13 @@ def start_emr_process(oscar_login_details: dict):
         existing_session_records = {}
     try:
         emr = OscarEmr(
-            emr_login_url=EMR_LOGIN_URL,
-            emr_id=RPA_EMR_PHELIX_ID,
+            emr_login_url=oscar_login_details.get("oscar_login_url", EMR_LOGIN_URL),
+            emr_id=oscar_login_details.get("oscar_login_partner_id", RPA_EMR_PHELIX_ID),
+            rpa_emr_username=oscar_login_details.get("oscar_login_username", ""),
+            rpa_emr_password=oscar_login_details.get("oscar_login_password", ""),
+            rpa_emr_pin=oscar_login_details.get("oscar_login_pin", ""),
             download_directory=DOWNLOAD_PATH,
             processed_patients_stored=copy.deepcopy(run_time_processed_patients_stored),
-            headless=True,
-            # headless=False,
             download_limit=DOWNLOAD_LIMIT,
             file_downloaded=file_downloaded,
             download_type_records=download_type_records,
