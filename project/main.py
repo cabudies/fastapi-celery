@@ -36,6 +36,7 @@ def run_task(payload = Body(...)):
     oscar_login_username = payload["oscar_login_username"]
     oscar_login_password = payload["oscar_login_password"]
     oscar_login_pin = payload["oscar_login_pin"]
+    oscar_login_via_pin = payload["oscar_login_via_pin"]
 
     # task = create_task.delay(int(task_type))
 
@@ -47,7 +48,8 @@ def run_task(payload = Body(...)):
                 "oscar_login_url": oscar_login_url,
                 "oscar_login_username": oscar_login_username,
                 "oscar_login_password": oscar_login_password,
-                "oscar_login_pin": oscar_login_pin
+                "oscar_login_pin": oscar_login_pin,
+                "oscar_login_via_pin": oscar_login_via_pin
             }
         }
     )
