@@ -1,9 +1,9 @@
 import os
-import time
-
 from celery import Celery
+
 import oscar_emr_docs_with_pin_login
 import oscar_emr_docs_without_pin_login
+
 
 celery = Celery(__name__)
 celery.conf.broker_url = os.environ.get("CELERY_BROKER_URL", "redis://127.0.0.1:6379/0")

@@ -70,6 +70,10 @@ class OscarEmr:
         rpa_emr_username,
         rpa_emr_password,
         rpa_emr_pin,
+        bucket_name,
+        folder_name,
+        sub_folder_name,
+        number_of_patients_to_be_processed,
         download_directory,
         processed_patients_stored=None,
         download_limit=10000,
@@ -112,6 +116,10 @@ class OscarEmr:
         self.rpa_emr_username = rpa_emr_username
         self.rpa_emr_password = rpa_emr_password
         self.rpa_emr_pin = rpa_emr_pin
+        self.bucket_name = bucket_name
+        self.folder_name = folder_name
+        self.sub_folder_name = sub_folder_name
+        self.number_of_patients_to_be_processed = number_of_patients_to_be_processed
         self.doc_create_start_date = doc_create_start_date
         # to support multiple emr instance of OscarEMR we have to
         # add subdomain part of the login url to download_directory
@@ -448,17 +456,17 @@ class OscarEmr:
             with open(file_path, 'rb') as fh:
                 data = fh.read()
             filename = self.file_name_parser(self.process_file_name(filename), idx)
-            print(filename, doc_type, file_name)
-            bucket_name = STORAGE_BUCKET_NAME
+            print("file details======", filename, doc_type, file_name)
+            # bucket_name = STORAGE_BUCKET_NAME
+            # bucket_name = "prod_document_ai"
+            bucket_name = self.bucket_name
+            
             bucket = gcs.get_bucket(bucket_name)
-            # blob = bucket.blob(
-            #     os.path.join(
-            #         os.path.join(STORAGE_BUCKET_ROOT_PATH,
-            #                      f"partner_{self.emr_id}",
-            #                      STORAGE_BUCKET_PATH, doc_type),
-            #         f"{file_name}_{filename}{self.previous_patient_id.strip()}.pdf"
-            #     )
-            # )
+            
+            print("bucket_name==============", bucket_name)
+            print("bucket var================", bucket)
+            print("filename===========", filename)
+            print("file_name============", file_name)
 
             # blob = bucket.blob(
             #     STORAGE_BUCKET_ROOT_PATH + "/" +
@@ -469,9 +477,9 @@ class OscarEmr:
             # )
 
             blob = bucket.blob(
-                "prod_document_ai" + "/" +
+                self.folder_name + "/" +
                 f"partner_{self.emr_id}" + "/" +
-                "files" + "/" +
+                self.sub_folder_name + "/" +
                 doc_type + "/" +
                 f"{file_name}_{filename}{self.previous_patient_id.strip()}.pdf"
             )
@@ -588,7 +596,8 @@ def start_emr_process(oscar_login_details: dict):
     emr = None
     run_time_processed_patients_stored = None
     try:
-        with open(f"session_{RPA_EMR_PHELIX_ID}.json", 'r') as fhr:
+        partner_id = oscar_login_details.get("partner_id")
+        with open(f"session_{partner_id}.json", 'r') as fhr:
             existing_session_records = json.loads(fhr.read() or "{}")
         download_time = existing_session_records.get("download_time") or 0
         file_downloaded = existing_session_records.get("file_downloaded") or 0
@@ -605,6 +614,10 @@ def start_emr_process(oscar_login_details: dict):
             rpa_emr_username=oscar_login_details.get("oscar_login_username", ""),
             rpa_emr_password=oscar_login_details.get("oscar_login_password", ""),
             rpa_emr_pin=oscar_login_details.get("oscar_login_pin", ""),
+            bucket_name = oscar_login_details.get("oscar_files_dump_gcp_bucket_name", "uat_document_ai"),
+            folder_name = oscar_login_details.get("oscar_files_dump_gcp_folder_name", "files"),
+            sub_folder_name = oscar_login_details.get("oscar_files_dump_gcp_sub_folder_name", "rpa"),
+            number_of_patients_to_be_processed = oscar_login_details.get("number_of_patients_to_be_processed", 0),
             download_directory=DOWNLOAD_PATH,
             processed_patients_stored=copy.deepcopy(run_time_processed_patients_stored),
             download_limit=DOWNLOAD_LIMIT,

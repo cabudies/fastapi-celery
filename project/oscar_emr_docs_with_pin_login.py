@@ -58,7 +58,7 @@ STORAGE_BUCKET_PATH = os.getenv("RPA_STORAGE_BUCKET_PATH", 'rpa-emr-oscar')
 STORAGE_BUCKET_ROOT_PATH = os.getenv("STORAGE_BUCKET_ROOT_PATH", 'files')
 
 
-# gcs = storage.Client()
+gcs = storage.Client()
 
 
 class OscarEmr:
@@ -73,6 +73,10 @@ class OscarEmr:
         rpa_emr_username,
         rpa_emr_password,
         rpa_emr_pin,
+        bucket_name,
+        folder_name,
+        sub_folder_name,
+        number_of_patients_to_be_processed,
         download_directory,
         processed_patients_stored=None,
         download_limit=10000,
@@ -115,6 +119,10 @@ class OscarEmr:
         self.rpa_emr_username = rpa_emr_username
         self.rpa_emr_password = rpa_emr_password
         self.rpa_emr_pin = rpa_emr_pin
+        self.bucket_name = bucket_name
+        self.folder_name = folder_name
+        self.sub_folder_name = sub_folder_name
+        self.number_of_patients_to_be_processed = number_of_patients_to_be_processed
         self.doc_create_start_date = doc_create_start_date
         # to support multiple emr instance of OscarEMR we have to
         # add subdomain part of the login url to download_directory
@@ -181,7 +189,7 @@ class OscarEmr:
             print("EMR_LOGIN_FAILED=====")
             return
         print("EMR_LOGIN_SUCCESS========")
-        return
+        # return
         try:
             search.click()
         except ElementClickInterceptedException as err:
@@ -207,8 +215,8 @@ class OscarEmr:
         processed_patients_count = 0
 
         while True:
-            # if processed_patients_count > 2:
-            #     break
+            if processed_patients_count > 3:
+                break
             if self.download_limit and self.file_downloaded and self.file_processed > self.download_limit:
                 print(f"file download limit {self.download_limit} "
                       f"crossed: {self.file_processed} - downloaded: {self.file_downloaded}")
@@ -476,10 +484,13 @@ class OscarEmr:
                 data = fh.read()
             filename = self.file_name_parser(self.process_file_name(filename), idx)
             print("file details======", filename, doc_type, file_name)
-            bucket_name = STORAGE_BUCKET_NAME
-            print("bucket name==============", bucket_name)
-            # bucket = gcs.get_bucket(bucket_name)
-            bucket = None
+            # bucket_name = STORAGE_BUCKET_NAME
+            # bucket_name = "prod_document_ai"
+            bucket_name = self.bucket_name
+            
+            bucket = gcs.get_bucket(bucket_name)
+            
+            print("bucket_name==============", bucket_name)
             print("bucket var================", bucket)
             print("filename===========", filename)
             print("file_name============", file_name)
@@ -493,19 +504,19 @@ class OscarEmr:
             #     f"{file_name}_{filename}{self.previous_patient_id.strip()}.pdf"
             # )
 
-            ## use this structure for prod
+            ## use this for production
             # blob = bucket.blob(
-            #     STORAGE_BUCKET_ROOT_PATH + "/" +
+            #     "partners" + "/" +
             #     f"partner_{self.emr_id}" + "/" +
-            #     STORAGE_BUCKET_PATH + "/" +
+            #     "rpa" + "/" +
             #     doc_type + "/" +
             #     f"{file_name}_{filename}{self.previous_patient_id.strip()}.pdf"
             # )
 
             blob = bucket.blob(
-                "prod_document_ai" + "/" +
+                self.folder_name + "/" +
                 f"partner_{self.emr_id}" + "/" +
-                "files" + "/" +
+                self.sub_folder_name + "/" +
                 doc_type + "/" +
                 f"{file_name}_{filename}{self.previous_patient_id.strip()}.pdf"
             )
@@ -644,7 +655,8 @@ def start_emr_process(oscar_login_details: dict):
     emr = None
     run_time_processed_patients_stored = None
     try:
-        with open(f"session_{RPA_EMR_PHELIX_ID}.json", 'r') as fhr:
+        partner_id = oscar_login_details.get("partner_id")
+        with open(f"session_{partner_id}.json", 'r') as fhr:
             existing_session_records = json.loads(fhr.read() or "{}")
         download_time = existing_session_records.get("download_time") or 0
         file_downloaded = existing_session_records.get("file_downloaded") or 0
@@ -661,10 +673,12 @@ def start_emr_process(oscar_login_details: dict):
             rpa_emr_username=oscar_login_details.get("oscar_login_username", ""),
             rpa_emr_password=oscar_login_details.get("oscar_login_password", ""),
             rpa_emr_pin=oscar_login_details.get("oscar_login_pin", ""),
+            bucket_name = oscar_login_details.get("oscar_files_dump_gcp_bucket_name", "uat_document_ai"),
+            folder_name = oscar_login_details.get("oscar_files_dump_gcp_folder_name", "files"),
+            sub_folder_name = oscar_login_details.get("oscar_files_dump_gcp_sub_folder_name", "rpa"),
+            number_of_patients_to_be_processed = oscar_login_details.get("number_of_patients_to_be_processed", 0),
             download_directory=DOWNLOAD_PATH,
             processed_patients_stored=copy.deepcopy(run_time_processed_patients_stored),
-            headless=True,
-            # headless=False,
             download_limit=DOWNLOAD_LIMIT,
             file_downloaded=file_downloaded,
             download_type_records=download_type_records,
@@ -677,44 +691,44 @@ def start_emr_process(oscar_login_details: dict):
         print(f"error: {err}")
         print("traceback========", traceback.format_exc())
     finally:
-        # if emr and emr.complete_processed_patients:
-        #     file_downloaded = emr.file_downloaded ## count of files downloaded
-        #     file_processed = emr.file_processed ## count of files processed not checking if downloaded or not
-        #     download_time = emr.download_time ## final download time
-        #     download_type_records = emr.download_type_records ## document record type (dictionary with different doc types count)
-        #     complete_processed_patients_to_write = emr.complete_processed_patients
-        #     if emr.processed_patients_stored and len(emr.processed_patients_stored) > len(emr.complete_processed_patients):
-        #         complete_processed_patients_to_write = emr.processed_patients_stored
-        #     try:
-        #         session_records = {
-        #             "complete_processed_patients_to_write": complete_processed_patients_to_write,
-        #             "download_time": download_time,
-        #             "file_downloaded": file_downloaded,
-        #             "time_required": time.time() - start_time, ## final time processed - initial time
-        #             "download_type_records": download_type_records,
-        #             "file_processed": file_processed
-        #         }
-        #         print(emr.complete_processed_patients)
-        #         with open(f"session_{emr.emr_id}.json", 'w') as fhw:
-        #             fhw.write(json.dumps(session_records, indent=4))
-        #     except Exception as err:
-        #         print(f"error: {err}")
-        # if emr and emr.driver:
-        #     emr.driver.quit()
-        # print(f"time_required: {time.time() - start_time}:: \n"
-        #       f"file_downloaded: {file_downloaded}: download_time: {download_time}")
-        session_records = {
-            "complete_processed_patients_to_write": [],
-            "download_time": 123,
-            "file_downloaded": 123,
-            "time_required": time.time(), ## final time processed - initial time
-            "download_type_records": [1],
-            "file_processed": 1234
-        }
-        # print(emr.complete_processed_patients)
+        if emr and emr.complete_processed_patients:
+            file_downloaded = emr.file_downloaded ## count of files downloaded
+            file_processed = emr.file_processed ## count of files processed not checking if downloaded or not
+            download_time = emr.download_time ## final download time
+            download_type_records = emr.download_type_records ## document record type (dictionary with different doc types count)
+            complete_processed_patients_to_write = emr.complete_processed_patients
+            if emr.processed_patients_stored and len(emr.processed_patients_stored) > len(emr.complete_processed_patients):
+                complete_processed_patients_to_write = emr.processed_patients_stored
+            try:
+                session_records = {
+                    "complete_processed_patients_to_write": complete_processed_patients_to_write,
+                    "download_time": download_time,
+                    "file_downloaded": file_downloaded,
+                    "time_required": time.time() - start_time, ## final time processed - initial time
+                    "download_type_records": download_type_records,
+                    "file_processed": file_processed
+                }
+                print(emr.complete_processed_patients)
+                with open(f"session_{emr.emr_id}.json", 'w') as fhw:
+                    fhw.write(json.dumps(session_records, indent=4))
+            except Exception as err:
+                print(f"error: {err}")
+        if emr and emr.driver:
+            emr.driver.quit()
+        print(f"time_required: {time.time() - start_time}:: \n"
+              f"file_downloaded: {file_downloaded}: download_time: {download_time}")
+        # session_records = {
+        #     "complete_processed_patients_to_write": [],
+        #     "download_time": 123,
+        #     "file_downloaded": 123,
+        #     "time_required": time.time(), ## final time processed - initial time
+        #     "download_type_records": [1],
+        #     "file_processed": 1234
+        # }
+        # # print(emr.complete_processed_patients)
     
-        with open(f"session_192.json", 'w') as fhw:
-            fhw.write(json.dumps(session_records, indent=4))
+        # with open(f"session_192.json", 'w') as fhw:
+        #     fhw.write(json.dumps(session_records, indent=4))
             
     print("start the sleep for 2 minutes=====")
     time.sleep(60*2)

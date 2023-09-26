@@ -35,6 +35,10 @@ def run_task(payload = Body(...)):
     oscar_login_password = payload["oscar_login_password"]
     oscar_login_pin = payload["oscar_login_pin"]
     oscar_login_via_pin = payload["oscar_login_via_pin"]
+    oscar_files_dump_gcp_bucket_name = payload["oscar_files_dump_gcp_bucket_name"]
+    oscar_files_dump_gcp_folder_name = payload["oscar_files_dump_gcp_folder_name"]
+    oscar_files_dump_gcp_sub_folder_name = payload["oscar_files_dump_gcp_sub_folder_name"]
+    number_of_patients_to_be_processed = payload["number_of_patients_to_be_processed"]
 
     # task = create_task.delay(int(task_type))
 
@@ -47,7 +51,11 @@ def run_task(payload = Body(...)):
                 "oscar_login_username": oscar_login_username,
                 "oscar_login_password": oscar_login_password,
                 "oscar_login_pin": oscar_login_pin,
-                "oscar_login_via_pin": oscar_login_via_pin
+                "oscar_login_via_pin": oscar_login_via_pin,
+                "oscar_files_dump_gcp_bucket_name": oscar_files_dump_gcp_bucket_name,
+                "oscar_files_dump_gcp_folder_name": oscar_files_dump_gcp_folder_name,
+                "oscar_files_dump_gcp_sub_folder_name": oscar_files_dump_gcp_sub_folder_name,
+                "number_of_patients_to_be_processed": number_of_patients_to_be_processed
             }
         }
     )
