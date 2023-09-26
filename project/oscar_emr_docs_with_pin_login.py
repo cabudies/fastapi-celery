@@ -215,7 +215,7 @@ class OscarEmr:
         processed_patients_count = 0
 
         while True:
-            if processed_patients_count > 3:
+            if processed_patients_count > self.number_of_patients_to_be_processed:
                 break
             if self.download_limit and self.file_downloaded and self.file_processed > self.download_limit:
                 print(f"file download limit {self.download_limit} "
@@ -261,7 +261,6 @@ class OscarEmr:
             self.complete_processed_patients.append(self.previous_patient_id)
             time.sleep(0.2)
             processed_patients_count += 1
-            break
 
         time.sleep(1.5)
         self.driver.close()
