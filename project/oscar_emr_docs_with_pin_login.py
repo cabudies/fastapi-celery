@@ -646,6 +646,7 @@ class OscarEmr:
 
 def start_emr_process(oscar_login_details: dict):
     print("inside start_emr_process=======")
+    print("oscar_login_details=========", oscar_login_details)
     start_time = time.time()
     file_downloaded = 0
     download_time = 0

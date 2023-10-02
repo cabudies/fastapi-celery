@@ -46,7 +46,7 @@ def run_task(payload = Body(...)):
         kwargs={
             "task_type": task_type,
             "oscar_login_details": {
-                "partner_id": oscar_login_partner_id,
+                "oscar_login_partner_id": oscar_login_partner_id,
                 "oscar_login_url": oscar_login_url,
                 "oscar_login_username": oscar_login_username,
                 "oscar_login_password": oscar_login_password,
