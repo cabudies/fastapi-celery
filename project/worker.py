@@ -13,7 +13,6 @@ celery.conf.result_backend = os.environ.get("CELERY_RESULT_BACKEND", "redis://12
 @celery.task(name="create_task")
 def create_task(task_type, oscar_login_details: dict):
     process_emr_documents(oscar_login_details=oscar_login_details)
-    # time.sleep(int(task_type) * 3)
     return True
 
 

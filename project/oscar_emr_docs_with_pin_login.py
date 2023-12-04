@@ -654,8 +654,8 @@ def start_emr_process(oscar_login_details: dict):
     download_type_records = {}
     emr = None
     run_time_processed_patients_stored = None
+    partner_id = oscar_login_details.get("oscar_login_partner_id")
     try:
-        partner_id = oscar_login_details.get("partner_id")
         with open(f"session_{partner_id}.json", 'r') as fhr:
             existing_session_records = json.loads(fhr.read() or "{}")
         download_time = existing_session_records.get("download_time") or 0

@@ -21,6 +21,15 @@ RUN wget --no-check-certificate https://dl.google.com/linux/chrome/deb/pool/main
 RUN dpkg -i google-chrome-stable_${CHROME_VERSION}_amd64.deb || apt -y -f install
 RUN rm google-chrome-stable_${CHROME_VERSION}_amd64.deb;
 
+# RUN CHROMEDRIVER_VERSION=$(wget -qO- https://chromedriver.storage.googleapis.com/LATEST_RELEASE) \
+#     && wget "https://chromedriver.storage.googleapis.com/${CHROMEDRIVER_VERSION}/chromedriver_linux64.zip" -O chromedriver.zip \
+#     && unzip chromedriver.zip -d /usr/local/bin \
+#     && rm chromedriver.zip
+
+RUN wget --no-check-certificate https://dl.google.com/linux/chrome/deb/pool/main/g/google-chrome-stable/google-chrome-stable_${CHROME_VERSION}_amd64.deb
+RUN dpkg -i google-chrome-stable_${CHROME_VERSION}_amd64.deb || apt -y -f install
+RUN rm google-chrome-stable_${CHROME_VERSION}_amd64.deb;
+
 RUN echo $(google-chrome --version)
 
 RUN echo $(wget -qO - https://chromedriver.storage.googleapis.com/LATEST_RELEASE)
@@ -31,8 +40,10 @@ RUN wget -q "https://chromedriver.storage.googleapis.com/114.0.5735.90/chromedri
     rm chromedriver_linux64.zip
 
 # Install Selenium Python library
-RUN apt-get install -y python3-pip && \
-    pip3 install selenium
+# RUN apt-get update && apt-get install -y python3-pip && \
+#     pip3 install selenium
+
+RUN apt-get update && apt-get install -y python3-pip
 
 # Clean up
 RUN apt-get clean && \
@@ -46,6 +57,7 @@ WORKDIR /usr/src/app
 
 # Copy the requirements file into the container
 COPY requirements.txt .
+COPY service_account.json .
 
 # Install any needed packages specified in requirements.txt
 RUN pip3 install --upgrade pip

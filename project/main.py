@@ -1,7 +1,6 @@
+import os
 from fastapi import Body, FastAPI
 from fastapi.responses import JSONResponse
-import os
-import time
 from celery import Celery
 from worker import create_task
 
@@ -9,13 +8,6 @@ from worker import create_task
 celery = Celery(__name__)
 celery.conf.broker_url = os.environ.get("CELERY_BROKER_URL", "redis://127.0.0.1:6379/0")
 celery.conf.result_backend = os.environ.get("CELERY_RESULT_BACKEND", "redis://127.0.0.1:6379/0")
-
-
-# @celery.task(name="create_task")
-# def create_task(task_type):
-#     print("create_task task_type======", task_type)
-#     time.sleep(int(task_type) * 10)
-#     return True
 
 
 app = FastAPI()
@@ -39,8 +31,6 @@ def run_task(payload = Body(...)):
     oscar_files_dump_gcp_folder_name = payload["oscar_files_dump_gcp_folder_name"]
     oscar_files_dump_gcp_sub_folder_name = payload["oscar_files_dump_gcp_sub_folder_name"]
     number_of_patients_to_be_processed = payload["number_of_patients_to_be_processed"]
-
-    # task = create_task.delay(int(task_type))
 
     task = create_task.apply_async(
         kwargs={

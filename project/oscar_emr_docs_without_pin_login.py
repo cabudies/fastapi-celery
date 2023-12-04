@@ -148,7 +148,9 @@ class OscarEmr:
             "plugins.always_open_pdf_externally": True
         })
 
-        driver = webdriver.Chrome(CHROME_DRIVER_PATH, options=options)
+        # driver = webdriver.Chrome(CHROME_DRIVER_PATH, options=options)
+        driver = webdriver.Chrome(options=options)
+        
         driver.execute_script("Object.defineProperty(navigator, 'maxTouchPoints', {get: () => 1});")
         driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined});")
         driver.execute_script("Object.defineProperty(navigator.connection, 'rtt', {get: () => 100});")
@@ -601,8 +603,8 @@ def start_emr_process(oscar_login_details: dict):
     emr = None
     run_time_processed_patients_stored = None
     try:
-        partner_id = oscar_login_details.get("partner_id")
-        with open(f"session_{partner_id}.json", 'r') as fhr:
+        partner_id = str(oscar_login_details.get("oscar_login_partner_id"))
+        with open(f"session_{partner_id}.json", 'w+') as fhr:
             existing_session_records = json.loads(fhr.read() or "{}")
         download_time = existing_session_records.get("download_time") or 0
         file_downloaded = existing_session_records.get("file_downloaded") or 0
@@ -665,3 +667,19 @@ def start_emr_process(oscar_login_details: dict):
             emr.driver.quit()
         print(f"time_required: {time.time() - start_time}:: \n"
               f"file_downloaded: {file_downloaded}: download_time: {download_time}")
+
+
+# if __name__ == "__main__":
+#     oscar_login_details_dict = {
+#         "oscar_login_partner_id": "229",
+#         "oscar_login_url": "https://van-der-ross.kai-oscar.com/oscar",
+#         "oscar_login_username": "phelix",
+#         "oscar_login_password": "NI%fX&7mgwLEp^n*",
+#         "oscar_login_pin": "",
+#         "oscar_login_via_pin": False,
+#         "oscar_files_dump_gcp_bucket_name": "uat_document_ai",
+#         "oscar_files_dump_gcp_folder_name": "files",
+#         "oscar_files_dump_gcp_sub_folder_name": "rpa",
+#         "number_of_patients_to_be_processed": 2
+#     }
+#     start_emr_process(oscar_login_details=oscar_login_details_dict)
